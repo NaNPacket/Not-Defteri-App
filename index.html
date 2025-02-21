@@ -3,186 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Not Uygulaması</title>
-    
-    <!-- React ve ReactDOM -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
-    
-    <!-- React Markdown -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-markdown/8.0.7/react-markdown.min.js"></script>
-    
-    <!-- React Sortable HOC -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-sortable-hoc/2.0.0/react-sortable-hoc.umd.js"></script>
-    
-    <!-- Array Move -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/array-move/3.0.1/array-move.min.js"></script>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>React Notlar Uygulaması</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/react-markdown@8.0.0/react-markdown.min.js"></script>
+    <script src="https://unpkg.com/array-move"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .note { padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px; }
+        .dark { background: #121212; color: white; }
+        button { padding: 5px 10px; margin: 5px; border: none; cursor: pointer; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="module">
-        import { useState, useEffect } from "react";
-        import ReactMarkdown from "react-markdown";
-        import { sortableContainer, sortableElement } from "react-sortable-hoc";
-        import arrayMove from "array-move";
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const ReactMarkdown = window.ReactMarkdown;
 
         function App() {
-            const [notes, setNotes] = useState(() => {
-                return JSON.parse(localStorage.getItem("notes")) || [];
-            });
-            const [darkMode, setDarkMode] = useState(() => {
-                return JSON.parse(localStorage.getItem("darkMode")) || false;
-            });
-            const [searchTerm, setSearchTerm] = useState("");
+            const [notes, setNotes] = useState(() => JSON.parse(localStorage.getItem("notes")) || []);
+            const [darkMode, setDarkMode] = useState(() => JSON.parse(localStorage.getItem("darkMode")) || false);
             const [newNote, setNewNote] = useState("");
-            const [editingNote, setEditingNote] = useState(null);
-            const [tags, setTags] = useState("");
-            const [deletedNotes, setDeletedNotes] = useState([]);
-            const [history, setHistory] = useState([]);
+            const [searchTerm, setSearchTerm] = useState("");
 
             useEffect(() => {
                 localStorage.setItem("notes", JSON.stringify(notes));
-                localStorage.setItem("deletedNotes", JSON.stringify(deletedNotes));
-                localStorage.setItem("history", JSON.stringify(history));
-            }, [notes, deletedNotes, history]);
-
-            useEffect(() => {
                 localStorage.setItem("darkMode", JSON.stringify(darkMode));
-            }, [darkMode]);
+            }, [notes, darkMode]);
 
             const addNote = () => {
                 if (newNote.trim()) {
-                    const note = { 
-                        id: Date.now(), 
-                        text: newNote, 
-                        tags: tags.split(",").map(tag => tag.trim()), 
-                        date: new Date().toISOString() 
-                    };
+                    const note = { id: Date.now(), text: newNote, date: new Date().toISOString() };
                     setNotes([...notes, note]);
-                    setHistory([...history, { action: "add", note }]);
                     setNewNote("");
-                    setTags("");
                 }
             };
 
             const deleteNote = (id) => {
-                const noteToDelete = notes.find(note => note.id === id);
-                setDeletedNotes([...deletedNotes, noteToDelete]);
-                setNotes(notes.filter((note) => note.id !== id));
-                setHistory([...history, { action: "delete", note: noteToDelete }]);
+                setNotes(notes.filter(note => note.id !== id));
             };
-
-            const restoreNote = (id) => {
-                const noteToRestore = deletedNotes.find(note => note.id === id);
-                setNotes([...notes, noteToRestore]);
-                setDeletedNotes(deletedNotes.filter((note) => note.id !== id));
-            };
-
-            const updateNote = (id, updatedText) => {
-                setNotes(notes.map(note => note.id === id ? { ...note, text: updatedText } : note));
-                setEditingNote(null);
-                setHistory([...history, { action: "edit", id, updatedText }]);
-            };
-
-            const onSortEnd = ({ oldIndex, newIndex }) => {
-                setNotes(arrayMove(notes, oldIndex, newIndex));
-            };
-
-            useEffect(() => {
-                const handleSaveShortcut = (event) => {
-                    if (event.ctrlKey && event.key === "s") {
-                        event.preventDefault();
-                        addNote();
-                    }
-                };
-                window.addEventListener("keydown", handleSaveShortcut);
-                return () => window.removeEventListener("keydown", handleSaveShortcut);
-            }, [newNote, tags]);
-
-            const SortableItem = sortableElement(({ note }) => (
-                <li className="flex flex-col p-2 border rounded">
-                    {editingNote === note.id ? (
-                        <textarea
-                            value={note.text}
-                            onChange={(e) => updateNote(note.id, e.target.value)}
-                            className="border p-2 w-full"
-                        />
-                    ) : (
-                        <ReactMarkdown>{note.text}</ReactMarkdown>
-                    )}
-                    <div className="flex justify-between mt-2">
-                        <span className="text-sm text-gray-500">
-                            {note.tags.join(", ")} - {new Date(note.date).toLocaleString()}
-                        </span>
-                        <div>
-                            <button onClick={() => setEditingNote(note.id)} className="text-yellow-500 mr-2">
-                                Düzenle
-                            </button>
-                            <button onClick={() => deleteNote(note.id)} className="text-red-500">
-                                Sil
-                            </button>
-                        </div>
-                    </div>
-                </li>
-            ));
-
-            const SortableList = sortableContainer(({ children }) => {
-                return <ul className="mt-4 space-y-2">{children}</ul>;
-            });
 
             return (
-                <div className={`min-h-screen p-4 ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
-                    <div className="max-w-xl mx-auto">
-                        <button 
-                            onClick={() => setDarkMode(!darkMode)} 
-                            className="mb-4 p-2 border rounded"
-                        >
-                            {darkMode ? "Light Mode" : "Dark Mode"}
-                        </button>
-                        <input
-                            type="text"
-                            placeholder="Yeni not ekle"
-                            value={newNote}
-                            onChange={(e) => setNewNote(e.target.value)}
-                            className="border p-2 w-full mb-2"
-                        />
-                        <input
-                            type="text"
-                            placeholder="Etiketleri virgülle ayırarak girin"
-                            value={tags}
-                            onChange={(e) => setTags(e.target.value)}
-                            className="border p-2 w-full mb-2"
-                        />
-                        <button 
-                            onClick={addNote} 
-                            className="bg-blue-500 text-white p-2 rounded w-full"
-                        >
-                            Not Ekle (Ctrl+S)
-                        </button>
-                        <input
-                            type="text"
-                            placeholder="Notlarda ara"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="border p-2 w-full mt-4"
-                        />
-                        <SortableList onSortEnd={onSortEnd} useDragHandle>
-                            {notes
-                                .filter((note) => note.text.toLowerCase().includes(searchTerm.toLowerCase()))
-                                .map((note, index) => (
-                                    <SortableItem key={note.id} index={index} note={note} />
-                                ))}
-                        </SortableList>
+                <div className={`container ${darkMode ? "dark" : ""}`}>
+                    <button onClick={() => setDarkMode(!darkMode)}>
+                        {darkMode ? "Aydınlık Mod" : "Karanlık Mod"}
+                    </button>
+                    <input 
+                        type="text" 
+                        placeholder="Yeni not ekle..." 
+                        value={newNote} 
+                        onChange={(e) => setNewNote(e.target.value)}
+                    />
+                    <button onClick={addNote}>Ekle</button>
+                    <input 
+                        type="text" 
+                        placeholder="Notlarda ara..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div>
+                        {notes
+                            .filter(note => note.text.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .map(note => (
+                                <div key={note.id} className="note">
+                                    <ReactMarkdown>{note.text}</ReactMarkdown>
+                                    <small>{new Date(note.date).toLocaleString()}</small>
+                                    <button onClick={() => deleteNote(note.id)}>Sil</button>
+                                </div>
+                            ))}
                     </div>
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
     </script>
 </body>
 </html>
