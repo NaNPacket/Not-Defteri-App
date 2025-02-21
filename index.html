@@ -4,20 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>React Notlar Uygulaması</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React ve ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel ve ReactMarkdown -->
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://unpkg.com/react-markdown@8.0.0/react-markdown.min.js"></script>
-    <script src="https://unpkg.com/array-move"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        .note { padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px; }
-        .dark { background: #121212; color: white; }
-        button { padding: 5px 10px; margin: 5px; border: none; cursor: pointer; }
-    </style>
 </head>
-<body>
+<body class="bg-gray-100 dark:bg-gray-900 transition-colors">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -48,33 +47,50 @@
             };
 
             return (
-                <div className={`container ${darkMode ? "dark" : ""}`}>
-                    <button onClick={() => setDarkMode(!darkMode)}>
-                        {darkMode ? "Aydınlık Mod" : "Karanlık Mod"}
-                    </button>
-                    <input 
-                        type="text" 
-                        placeholder="Yeni not ekle..." 
-                        value={newNote} 
-                        onChange={(e) => setNewNote(e.target.value)}
-                    />
-                    <button onClick={addNote}>Ekle</button>
-                    <input 
-                        type="text" 
-                        placeholder="Notlarda ara..." 
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <div>
-                        {notes
-                            .filter(note => note.text.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .map(note => (
-                                <div key={note.id} className="note">
-                                    <ReactMarkdown>{note.text}</ReactMarkdown>
-                                    <small>{new Date(note.date).toLocaleString()}</small>
-                                    <button onClick={() => deleteNote(note.id)}>Sil</button>
-                                </div>
-                            ))}
+                <div className={`min-h-screen flex flex-col items-center p-4 transition-colors ${darkMode ? "bg-gray-900 text-white" : "bg-white text-black"}`}>
+                    <div className="w-full max-w-xl">
+                        <button 
+                            onClick={() => setDarkMode(!darkMode)}
+                            className="mb-4 w-full py-2 rounded bg-gray-800 text-white dark:bg-gray-300 dark:text-black transition"
+                        >
+                            {darkMode ? "🌞 Aydınlık Mod" : "🌙 Karanlık Mod"}
+                        </button>
+
+                        <div className="flex gap-2 mb-4">
+                            <input 
+                                type="text" 
+                                placeholder="Yeni not ekle..." 
+                                value={newNote} 
+                                onChange={(e) => setNewNote(e.target.value)}
+                                className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+                            />
+                            <button onClick={addNote} className="bg-blue-500 text-white px-4 py-2 rounded">Ekle</button>
+                        </div>
+
+                        <input 
+                            type="text" 
+                            placeholder="Notlarda ara..." 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full p-2 border rounded mb-4 dark:bg-gray-800 dark:text-white"
+                        />
+
+                        <div className="space-y-3">
+                            {notes
+                                .filter(note => note.text.toLowerCase().includes(searchTerm.toLowerCase()))
+                                .map(note => (
+                                    <div key={note.id} className="p-4 border rounded shadow dark:bg-gray-800">
+                                        <ReactMarkdown>{note.text}</ReactMarkdown>
+                                        <small className="text-gray-500 dark:text-gray-400 block mt-2">{new Date(note.date).toLocaleString()}</small>
+                                        <button 
+                                            onClick={() => deleteNote(note.id)} 
+                                            className="mt-2 bg-red-500 text-white px-3 py-1 rounded"
+                                        >
+                                            Sil
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
                     </div>
                 </div>
             );
